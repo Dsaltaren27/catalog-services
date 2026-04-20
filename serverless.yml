@@ -1,0 +1,26 @@
+service: catalog-service
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    REDIS_HOST: TU_ENDPOINT_REDIS
+    BUCKET_NAME: TU_BUCKET
+
+functions:
+  updateCatalog:
+    handler: src/handlers/updateCatalog.handler
+    events:
+      - http:
+          path: catalog/update
+          method: post
+          cors: true
+
+  getCatalog:
+    handler: src/handlers/getCatalog.handler
+    events:
+      - http:
+          path: catalog
+          method: get
+          cors: true
