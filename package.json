@@ -2,7 +2,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1033.0",
     "csv-parser": "^3.2.0",
-    "ioredis": "^5.10.1",
-    "uuid": "^14.0.0"
+    "ioredis": "^5.10.1"
   }
 }

@@ -1,12 +1,12 @@
-import {redis} from '../utils/redisClient.js';
+const {redis}=require ('../utils/redisClient');
 
-export const handler=async ()=>{
+exports.handler=async ()=>{
 
     try {
         const data=await redis.get('catalog');
         return {
             statusCode:200,
-            body:JSON.stringify(data)
+            body:data ? data : JSON.stringify([])
         };
     } catch (e) {
         return {

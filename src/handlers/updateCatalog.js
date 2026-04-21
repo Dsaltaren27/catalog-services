@@ -1,41 +1,50 @@
-import { S3Client ,PutObjectCommand} from "@aws-sdk/client-s3";
-import { v4 as uuidv4 } from 'uuid';
-import { parseCSV } from '../utils/csvParser.js';
-import { redis } from '../utils/redisClient.js';
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const crypto = require("crypto");
+const { parseCSV } = require("../utils/csvParser");
+const { redis } = require("../utils/redisClient");
 
+const s3 = new S3Client({ region: process.env.AWS_REGION });
 
-const s3= new S3Client({region: process.env.AWS_REGION});
+exports.handler = async (event) => {
+  try {
+    const { file } = JSON.parse(event.body || "{}");
 
-export const handler=async (event)=>{
-    try {
-        const {file}=JSON.parse(event.body || '{}');
-        if(!file) return {
-            statusCode:400,
-            body:'CSV required'};
-        
-// Subir el archivo a S3
-            const key=`catalogs/${uuidv4()}.csv`;
-            await s3.send(new PutObjectCommand({
-                Bucket: process.env.S3_BUCKET,
-                Key: key,
-                Body: file,
-            }));
+    if (!file) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "CSV required" })
+      };
+    }
 
-// parsear el CSV
-            const catalog=await parseCSV(file);
+    // CORREGIDO AQUÍ
+    const key = `catalogs/${crypto.randomUUID()}.csv`;
 
-// reemplazar en Redis
-            await redis.set('catalog', JSON.stringify(catalog));
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.BUCKET_NAME,
+      Key: key,
+      Body: file,
+    }));
 
-            return {
-                statusCode:200,
-                body:'Catalog updated successfully'
-            };
-    } catch (e) {
+    const catalog = await parseCSV(file);
 
-        return {
-            statusCode:500,
-            body:'Error updating catalog'
-        };
-    }   
-};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+    await redis.set("catalog", JSON.stringify(catalog));
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: "Catalog updated successfully",
+        items: catalog.length
+      })
+    };
+
+  } catch (error) {
+    console.error("Error en updateCatalog:", error);
+
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Error updating catalog"
+      })
+    };
+  }
+};

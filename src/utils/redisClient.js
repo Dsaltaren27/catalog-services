@@ -1,9 +1,8 @@
-import redis from 'ioredis';
+const Redis = require("ioredis");
 
-export const redis=new redis.Cluster([
-    {
-        host: process.env.REDIS_HOST,
-        port: 6379,
-        
-    }
-]);          
+const redis = new Redis({
+  host: process.env.REDIS_HOST,
+  port: 6379,
+});
+
+module.exports = { redis };
