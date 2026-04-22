@@ -189,13 +189,13 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/catalog-service/dev/1776815360501-2026-04-21T23:49:20.501Z/catalog-service.zip"
+          "S3Key": "serverless/catalog-service/dev/1776822429911-2026-04-22T01:47:09.911Z/catalog-service.zip"
         },
         "Handler": "src/handlers/updateCatalog.handler",
         "Runtime": "nodejs18.x",
         "FunctionName": "catalog-service-dev-updateCatalog",
         "MemorySize": 1024,
-        "Timeout": 6,
+        "Timeout": 15,
         "Environment": {
           "Variables": {
             "REDIS_HOST": "catalog-redis.i9vrbu.ng.0001.use1.cache.amazonaws.com",
@@ -229,7 +229,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/catalog-service/dev/1776815360501-2026-04-21T23:49:20.501Z/catalog-service.zip"
+          "S3Key": "serverless/catalog-service/dev/1776822429911-2026-04-22T01:47:09.911Z/catalog-service.zip"
         },
         "Handler": "src/handlers/getCatalog.handler",
         "Runtime": "nodejs18.x",
@@ -262,24 +262,24 @@
         "GetCatalogLogGroup"
       ]
     },
-    "UpdateCatalogLambdaVersionZ2Zmy3G0ccT4k0mZLaEmzMKRBSJ5kqv9elpxrddT9E": {
+    "UpdateCatalogLambdaVersionIUTwjNXdDmC7ICA9Fp7qyxdYBlB9uBideM73NVv5Ru8": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "UpdateCatalogLambdaFunction"
         },
-        "CodeSha256": "u+5oAc7ar0nQnog0A7U/Zv/+syszZDBQmPueeuJwbGA="
+        "CodeSha256": "Au3rQipCNuvxLe/kgiJsm+HYNIj+f8REIlr2RQKZhck="
       }
     },
-    "GetCatalogLambdaVersionZC74BLD3clElEinBzY7DAx4mIRDIpq4ircytkf1A5cc": {
+    "GetCatalogLambdaVersion4sEKIri4tAhmp9SJBHPLgCBQiNX29BnbQGDOkBSLU": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "GetCatalogLambdaFunction"
         },
-        "CodeSha256": "u+5oAc7ar0nQnog0A7U/Zv/+syszZDBQmPueeuJwbGA="
+        "CodeSha256": "Au3rQipCNuvxLe/kgiJsm+HYNIj+f8REIlr2RQKZhck="
       }
     },
     "ApiGatewayRestApi": {
@@ -503,7 +503,7 @@
         "GetCatalogLambdaPermissionApiGateway"
       ]
     },
-    "ApiGatewayDeployment1776815355224": {
+    "ApiGatewayDeployment1776822425561": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -605,7 +605,7 @@
     "UpdateCatalogLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "UpdateCatalogLambdaVersionZ2Zmy3G0ccT4k0mZLaEmzMKRBSJ5kqv9elpxrddT9E"
+        "Ref": "UpdateCatalogLambdaVersionIUTwjNXdDmC7ICA9Fp7qyxdYBlB9uBideM73NVv5Ru8"
       },
       "Export": {
         "Name": "sls-catalog-service-dev-UpdateCatalogLambdaFunctionQualifiedArn"
@@ -614,7 +614,7 @@
     "GetCatalogLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "GetCatalogLambdaVersionZC74BLD3clElEinBzY7DAx4mIRDIpq4ircytkf1A5cc"
+        "Ref": "GetCatalogLambdaVersion4sEKIri4tAhmp9SJBHPLgCBQiNX29BnbQGDOkBSLU"
       },
       "Export": {
         "Name": "sls-catalog-service-dev-GetCatalogLambdaFunctionQualifiedArn"

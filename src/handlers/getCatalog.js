@@ -1,6 +1,7 @@
 const {redis}=require ('../utils/redisClient');
 
-exports.handler=async ()=>{
+exports.handler=async (event, context) => {
+    context.callbackWaitsForEmptyEventLoop = false;
 
     try {
         const data=await redis.get('catalog');

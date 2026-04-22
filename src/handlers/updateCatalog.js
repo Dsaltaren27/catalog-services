@@ -5,7 +5,8 @@ const { redis } = require("../utils/redisClient");
 
 const s3 = new S3Client({ region: process.env.AWS_REGION });
 
-exports.handler = async (event) => {
+exports.handler = async (event, context) => {
+    context.callbackWaitsForEmptyEventLoop = false;
   try {
     const { file } = JSON.parse(event.body || "{}");
 
@@ -27,7 +28,9 @@ exports.handler = async (event) => {
 
     const catalog = await parseCSV(file);
 
+    console.log("ANTES DE REDIS");
     await redis.set("catalog", JSON.stringify(catalog));
+    console.log("DESPUÉS DE REDIS");
 
     return {
       statusCode: 200,

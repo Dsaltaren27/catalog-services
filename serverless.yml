@@ -4,16 +4,18 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
-  environment:
-    REDIS_HOST: catalog-redis.i9vrbu.ng.0001.use1.cache.amazonaws.com
-    BUCKET_NAME: bank-avatar-bucket-2026
 
+  
   vpc:
     securityGroupIds:
       - sg-0cfb5e305ffdf3c9a
     subnetIds:
       - subnet-0869f50fd1fa1b1af
       - subnet-0d55f91852e120713
+
+  environment:
+    REDIS_HOST: catalog-redis.i9vrbu.ng.0001.use1.cache.amazonaws.com
+    BUCKET_NAME: bank-avatar-bucket-2026
 
   # PERMISOS PARA S3
   iam:
@@ -27,6 +29,7 @@ provider:
 functions:
   updateCatalog:
     handler: src/handlers/updateCatalog.handler
+    timeout: 15
     events:
       - http:
           path: catalog/update
