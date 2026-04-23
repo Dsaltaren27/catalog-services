@@ -1,13 +1,20 @@
+
 const parseCSV = async (csvContent) => {
   const lines = csvContent.split("\n");
-  const headers = lines[0].split(",");
+
+
+  const headers = lines[0].split(",").map(h => h.trim());
 
   const results = lines.slice(1).map(line => {
+
+  
+    if (!line.trim()) return null;
+
     const values = line.split(",");
     const obj = {};
 
     headers.forEach((header, index) => {
-      obj[header.trim()] = values[index]?.trim();
+      obj[header] = values[index]?.trim();
     });
 
     return {
@@ -20,7 +27,7 @@ const parseCSV = async (csvContent) => {
       detalles: obj.detalles,
       estado: obj.estado,
     };
-  });
+  }).filter(Boolean); 
 
   return results;
 };

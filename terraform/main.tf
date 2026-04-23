@@ -21,7 +21,7 @@ resource "aws_iam_role" "lambda_role" {
 }
 
 # ======================
-# LOGS (CRÍTICO - LO QUE SERVERLESS TE DABA AUTOMÁTICO)
+# LOGS LAMBDA
 # ======================
 resource "aws_iam_role_policy_attachment" "lambda_basic_logs" {
   role       = aws_iam_role.lambda_role.name
@@ -52,7 +52,7 @@ resource "aws_iam_role_policy" "s3_policy" {
 }
 
 # ======================
-# VPC PERMISSIONS
+# VPC PERMISSIONS (Redis en VPC)
 # ======================
 resource "aws_iam_role_policy" "vpc_policy" {
   role = aws_iam_role.lambda_role.id
@@ -74,7 +74,7 @@ resource "aws_iam_role_policy" "vpc_policy" {
 }
 
 # ======================
-# LAMBDA updateCatalog
+# LAMBDA: UPDATE CATALOG
 # ======================
 resource "aws_lambda_function" "update_catalog" {
   function_name = "updateCatalog"
@@ -103,7 +103,7 @@ resource "aws_lambda_function" "update_catalog" {
 }
 
 # ======================
-# LAMBDA getCatalog
+# LAMBDA: GET CATALOG
 # ======================
 resource "aws_lambda_function" "get_catalog" {
   function_name = "getCatalog"
@@ -115,6 +115,8 @@ resource "aws_lambda_function" "get_catalog" {
 
   filename         = "${path.module}/lambda.zip"
   source_code_hash = filebase64sha256("${path.module}/lambda.zip")
+
+  timeout = 10
 
   vpc_config {
     subnet_ids         = var.subnet_ids
@@ -129,61 +131,107 @@ resource "aws_lambda_function" "get_catalog" {
 }
 
 # ======================
-# API GATEWAY
+# API GATEWAY REST API (CORREGIDO)
 # ======================
-resource "aws_apigatewayv2_api" "api" {
-  name          = "catalog-api"
-  protocol_type = "HTTP"
+resource "aws_api_gateway_rest_api" "api" {
+  name        = "catalog-api"
+  description = "Catalog REST API"
 }
 
 # ======================
-# INTEGRATIONS
+# RESOURCES
 # ======================
-resource "aws_apigatewayv2_integration" "update_integration" {
-  api_id           = aws_apigatewayv2_api.api.id
-  integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.update_catalog.invoke_arn
+
+# /catalog
+resource "aws_api_gateway_resource" "catalog" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "catalog"
 }
 
-resource "aws_apigatewayv2_integration" "get_integration" {
-  api_id           = aws_apigatewayv2_api.api.id
-  integration_type = "AWS_PROXY"
-  integration_uri  = aws_lambda_function.get_catalog.invoke_arn
+# /catalog/update
+resource "aws_api_gateway_resource" "catalog_update" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_resource.catalog.id
+  path_part   = "update"
 }
 
 # ======================
-# ROUTES
+# METHODS
 # ======================
-resource "aws_apigatewayv2_route" "update_route" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "POST /catalog/update"
-  target    = "integrations/${aws_apigatewayv2_integration.update_integration.id}"
+
+# GET /catalog
+resource "aws_api_gateway_method" "get_catalog" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.catalog.id
+  http_method   = "GET"
+  authorization = "NONE"
 }
 
-resource "aws_apigatewayv2_route" "get_route" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "GET /catalog"
-  target    = "integrations/${aws_apigatewayv2_integration.get_integration.id}"
+# POST /catalog/update
+resource "aws_api_gateway_method" "update_catalog" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.catalog_update.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+# ======================
+# INTEGRATIONS (LAMBDA PROXY)
+# ======================
+
+resource "aws_api_gateway_integration" "get_catalog_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.catalog.id
+  http_method = aws_api_gateway_method.get_catalog.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_catalog.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "update_catalog_integration" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.catalog_update.id
+  http_method = aws_api_gateway_method.update_catalog.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.update_catalog.invoke_arn
+}
+
+# ======================
+# DEPLOYMENT
+# ======================
+resource "aws_api_gateway_deployment" "deployment" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+
+  depends_on = [
+    aws_api_gateway_integration.get_catalog_integration,
+    aws_api_gateway_integration.update_catalog_integration
+  ]
 }
 
 # ======================
 # STAGE
 # ======================
-resource "aws_apigatewayv2_stage" "dev" {
-  api_id      = aws_apigatewayv2_api.api.id
-  name        = "$default"
-  auto_deploy = true
+resource "aws_api_gateway_stage" "dev" {
+  deployment_id = aws_api_gateway_deployment.deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  stage_name    = "dev"
 }
 
 # ======================
-# PERMISOS API GATEWAY → LAMBDA 
+# LAMBDA PERMISSIONS
 # ======================
+
 resource "aws_lambda_permission" "apigw_get" {
   statement_id  = "AllowGetInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.get_catalog.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*/*"
+
+  source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/GET/catalog"
 }
 
 resource "aws_lambda_permission" "apigw_update" {
@@ -191,5 +239,6 @@ resource "aws_lambda_permission" "apigw_update" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.update_catalog.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.api.execution_arn}/*/*"
+
+  source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/POST/catalog/update"
 }

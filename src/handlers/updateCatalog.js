@@ -1,3 +1,4 @@
+// updateCatalog.js
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const crypto = require("crypto");
 const { parseCSV } = require("../utils/csvParser");
@@ -6,9 +7,12 @@ const { redis } = require("../utils/redisClient");
 const s3 = new S3Client({ region: process.env.AWS_REGION });
 
 exports.handler = async (event, context) => {
-    context.callbackWaitsForEmptyEventLoop = false;
+  context.callbackWaitsForEmptyEventLoop = false;
+
   try {
-    const { file } = JSON.parse(event.body || "{}");
+    const body = JSON.parse(event.body || "{}");
+
+    const file = body.file;
 
     if (!file) {
       return {
@@ -17,8 +21,8 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // CORREGIDO AQUÍ
-    const key = `catalogs/${crypto.randomUUID()}.csv`;
+    // CORREGIDO: mejor organización en S3
+    const key = `catalog/${crypto.randomUUID()}.csv`;
 
     await s3.send(new PutObjectCommand({
       Bucket: process.env.BUCKET_NAME,
@@ -28,9 +32,7 @@ exports.handler = async (event, context) => {
 
     const catalog = await parseCSV(file);
 
-    console.log("ANTES DE REDIS");
-    await redis.set("catalog", JSON.stringify(catalog));
-    console.log("DESPUÉS DE REDIS");
+    await redis.set("catalog:latest", JSON.stringify(catalog));
 
     return {
       statusCode: 200,
