@@ -6,7 +6,6 @@ exports.handler = async (event, context) => {
 
   try {
 
-    const data = await redis.get('catalog');
     
     const data = await redis.get("catalog:latest");
 
