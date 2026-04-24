@@ -16,9 +16,10 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "catalog_bucket_name" {
-  description = "Existing S3 bucket that stores the catalog CSV."
+variable "resource_suffix" {
+  description = "Suffix added to resource names to avoid collisions."
   type        = string
+  default     = "v2"
 }
 
 variable "catalog_object_key" {

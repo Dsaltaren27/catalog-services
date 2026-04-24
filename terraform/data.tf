@@ -11,8 +11,7 @@ data "aws_iam_policy_document" "lambda_assume_role" {
   }
 }
 
-data "aws_route_tables" "vpc" {
-  vpc_id = var.vpc_id
+data "aws_caller_identity" "current" {
 }
 
 data "aws_iam_policy_document" "catalog_lambda" {
@@ -25,8 +24,8 @@ data "aws_iam_policy_document" "catalog_lambda" {
       "s3:PutObject"
     ]
     resources = [
-      "arn:aws:s3:::${var.catalog_bucket_name}/${var.catalog_object_key}",
-      "arn:aws:s3:::${var.catalog_bucket_name}/${dirname(var.catalog_object_key)}/*"
+      "${aws_s3_bucket.catalog.arn}/${var.catalog_object_key}",
+      "${aws_s3_bucket.catalog.arn}/${dirname(var.catalog_object_key)}/*"
     ]
   }
 
@@ -37,7 +36,7 @@ data "aws_iam_policy_document" "catalog_lambda" {
       "s3:ListBucket"
     ]
     resources = [
-      "arn:aws:s3:::${var.catalog_bucket_name}"
+      aws_s3_bucket.catalog.arn
     ]
 
     condition {

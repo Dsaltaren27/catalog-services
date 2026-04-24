@@ -1,8 +1,8 @@
 locals {
-  name_prefix             = "${var.project_name}-${var.environment}"
-  lambda_zip_path         = "${path.root}/../.artifacts/catalog-lambda.zip"
-  catalog_seed_source     = "${path.root}/../servicios.csv"
-  private_route_table_ids = data.aws_route_tables.vpc.ids
+  name_prefix         = "${var.project_name}-${var.environment}-${var.resource_suffix}"
+  lambda_zip_path     = "${path.root}/../.artifacts/catalog-lambda.zip"
+  catalog_seed_source = "${path.root}/../servicios.csv"
+  catalog_bucket_name = lower("${var.project_name}-${var.environment}-${var.resource_suffix}-${data.aws_caller_identity.current.account_id}")
 }
 
 resource "aws_security_group" "lambda" {
@@ -61,11 +61,9 @@ resource "aws_elasticache_replication_group" "redis" {
   transit_encryption_enabled = false
 }
 
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = var.vpc_id
-  service_name      = "com.amazonaws.${var.aws_region}.s3"
-  vpc_endpoint_type = "Gateway"
-  route_table_ids   = local.private_route_table_ids
+resource "aws_s3_bucket" "catalog" {
+  bucket        = local.catalog_bucket_name
+  force_destroy = true
 }
 
 resource "aws_iam_role" "lambda" {
@@ -111,7 +109,7 @@ resource "aws_lambda_function" "catalog_processor" {
 
   environment {
     variables = {
-      CATALOG_BUCKET_NAME = var.catalog_bucket_name
+      CATALOG_BUCKET_NAME = aws_s3_bucket.catalog.bucket
       CATALOG_CACHE_KEY   = var.catalog_cache_key
       REDIS_HOST          = aws_elasticache_replication_group.redis.primary_endpoint_address
       REDIS_PORT          = tostring(var.redis_port)
@@ -121,8 +119,7 @@ resource "aws_lambda_function" "catalog_processor" {
   depends_on = [
     aws_cloudwatch_log_group.catalog_processor,
     aws_iam_role_policy_attachment.lambda_basic_logs,
-    aws_iam_role_policy.catalog_lambda,
-    aws_vpc_endpoint.s3
+    aws_iam_role_policy.catalog_lambda
   ]
 }
 
@@ -161,11 +158,11 @@ resource "aws_lambda_permission" "allow_s3_to_invoke_catalog_processor" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.catalog_processor.function_name
   principal     = "s3.amazonaws.com"
-  source_arn    = "arn:aws:s3:::${var.catalog_bucket_name}"
+  source_arn    = aws_s3_bucket.catalog.arn
 }
 
 resource "aws_s3_bucket_notification" "catalog_upload" {
-  bucket = var.catalog_bucket_name
+  bucket = aws_s3_bucket.catalog.id
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.catalog_processor.arn
@@ -178,7 +175,7 @@ resource "aws_s3_bucket_notification" "catalog_upload" {
 }
 
 resource "aws_s3_object" "catalog_seed" {
-  bucket       = var.catalog_bucket_name
+  bucket       = aws_s3_bucket.catalog.id
   key          = var.catalog_object_key
   source       = local.catalog_seed_source
   content_type = "text/csv"
@@ -259,4 +256,9 @@ output "catalog_get_url" {
 output "redis_primary_endpoint" {
   description = "Primary Redis endpoint address."
   value       = aws_elasticache_replication_group.redis.primary_endpoint_address
+}
+
+output "catalog_bucket_name" {
+  description = "Generated S3 bucket name for the catalog."
+  value       = aws_s3_bucket.catalog.bucket
 }
