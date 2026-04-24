@@ -1,26 +1,68 @@
-variable "region" {
-  default = "us-east-1"
+variable "aws_region" {
+  description = "AWS region where the infrastructure will be deployed."
+  type        = string
+  default     = "us-east-1"
 }
 
-variable "bucket_name" {
-  default = "bank-avatar-bucket-2026"
+variable "project_name" {
+  description = "Project name used in tags and resource naming."
+  type        = string
+  default     = "catalog-services"
 }
 
-variable "redis_host" {
-  default = "catalog-redis.i9vrbu.ng.0001.use1.cache.amazonaws.com"
+variable "environment" {
+  description = "Environment name used in tags and resource naming."
+  type        = string
+  default     = "dev"
 }
 
-variable "subnet_ids" {
-  type = list(string)
-  default = [
-    "subnet-0869f50fd1fa1b1af",
-    "subnet-0d55f91852e120713"
-  ]
+variable "catalog_bucket_name" {
+  description = "Existing S3 bucket that stores the catalog CSV."
+  type        = string
 }
 
-variable "security_group_ids" {
-  type = list(string)
-  default = [
-    "sg-0cfb5e305ffdf3c9a"
-  ]
+variable "catalog_object_key" {
+  description = "S3 key where the catalog CSV will be uploaded."
+  type        = string
+  default     = "catalog/servicios.csv"
+}
+
+variable "catalog_cache_key" {
+  description = "Redis key used to store the latest parsed catalog."
+  type        = string
+  default     = "catalog:latest"
+}
+
+variable "vpc_id" {
+  description = "VPC where Lambda and Redis will run."
+  type        = string
+}
+
+variable "private_subnet_ids" {
+  description = "Private subnets used by Lambda and Redis."
+  type        = list(string)
+}
+
+variable "redis_node_type" {
+  description = "ElastiCache node type for Redis."
+  type        = string
+  default     = "cache.t3.micro"
+}
+
+variable "redis_port" {
+  description = "Port exposed by Redis."
+  type        = number
+  default     = 6379
+}
+
+variable "redis_engine_version" {
+  description = "Redis engine version."
+  type        = string
+  default     = "7.1"
+}
+
+variable "lambda_runtime" {
+  description = "Runtime used by both Lambda functions."
+  type        = string
+  default     = "nodejs18.x"
 }

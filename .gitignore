@@ -1,7 +1,33 @@
-# Terraform
+# Node
+node_modules/
+npm-debug.log*
+
+# Local sample/data files
+*.csv
+
+# Terraform working directory and generated files
+.terraform/
 terraform/.terraform/
-terraform/**/*.tfstate
-terraform/**/*.tfstate.*
-terraform/crash.log
 *.tfstate
 *.tfstate.*
+terraform.tfstate
+terraform.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform local variables and plans
+*.tfvars
+*.tfvars.json
+*.tfplan
+
+# Terraform package artifacts
+*.zip
+.artifacts/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
